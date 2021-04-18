@@ -157,7 +157,7 @@ router.get('/api/survey/carmake', async (req, res, next) => {
       var label = [];
       var tdata = [];
           for(let model of data[0]) {
-            if(model._id!='' || model._id!='null'){
+            if(model._id!='' && model._id!=null){
               label.push(model._id);
               tdata.push(model.count);
             }
