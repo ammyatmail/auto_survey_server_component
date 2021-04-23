@@ -14,7 +14,7 @@ router.get('/api/survey', (req, res, next) => {
 // POST /api/survey is to post the survey json data
 router.post('/api/survey', async (req, res, next) => {
   const { age, gender, license, firstcar, drivetrain, fuel, carscount, cars } = req.body;
-  console.log(req.body);
+  //console.log(req.body);
   if (!age) {
     return res.status(400).json({
       message: 'Age is required',
