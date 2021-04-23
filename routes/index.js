@@ -13,13 +13,14 @@ router.get('/api/survey', (req, res, next) => {
 
 // POST /api/survey is to post the survey json data
 router.post('/api/survey', async (req, res, next) => {
-  const { age, gender, license, firstcar, drivetrain, fuel, carscount, carmake, carmodel } = req.body;
+  const { age, gender, license, firstcar, drivetrain, fuel, carscount, cars } = req.body;
+  console.log(req.body);
   if (!age) {
     return res.status(400).json({
       message: 'Age is required',
     });
   }
-  const payload = { age, gender, license, firstcar, drivetrain, fuel, carscount, carmake, carmodel };
+  const payload = { age, gender, license, firstcar, drivetrain, fuel, carscount, cars };
   req.collection.insertOne(payload)
     .then(result => res.json(result.ops[0]))
     .catch(error => res.send(error));
@@ -27,148 +28,124 @@ router.post('/api/survey', async (req, res, next) => {
 
 // GET /api/survey/age is to get information about ['Below 18', 'UnLicensed Driver', 'First car owners participated', 'Targetable Clients']
 router.get('/api/survey/age', async (req, res, next) => {
-  var allDbRequest = [];
-  var label = ['Below 18', 'UnLicensed Driver', 'First car owners participated', 'Targetable Clients'];
+  let allDbRequest = [];
+  let label = ['Below 18', 'UnLicensed Driver', 'First car owners participated', 'Targetable Clients'];
   allDbRequest.push(req.collection.count({ age: { $lt: 18 } }));
   allDbRequest.push(req.collection.count({ age: { $gt: 18 }, license: "no" }));
   allDbRequest.push(req.collection.count({ age: { $lt: 26 }, age: { $gt: 17 }, firstcar: "yes" }));
   allDbRequest.push(req.collection.count({ license: "yes", firstcar: "no" }));
-  var total = [];
+  let total = [];
   total.push(label);
   Promise.all(allDbRequest).then(function (data) {
-      //console.log(data);//result will be array which contains each promise response
-      total.push(data);
-      res.json(total);
+    //console.log(data);//result will be array which contains each promise response
+    total.push(data);
+    res.json(total);
   }).catch(function (err) {
-       console.log(err);
+    console.log(err);
   });
 });
 
 // GET /api/survey/targetableclients is to get information about targetable clients
 router.get('/api/survey/targetableclients', async (req, res, next) => {
-  var allDbRequest = [];
-  var label = ['Fuel Emission(%)', 'Drive Train(%)', 'Others(%)'];
+  let allDbRequest = [];
+  let label = ['Fuel Emission(%)', 'Drive Train(%)', 'Others(%)'];
   allDbRequest.push(req.collection.count({ license: "yes", firstcar: "no" }));
   allDbRequest.push(req.collection.count({ license: "yes", firstcar: "no", fuel: "yes" }));
-  allDbRequest.push(req.collection.count({ license: "yes", firstcar: "no" , $or: [{ drivetrain: "fwd", drivetrain: "idontknow" }] }));
+  allDbRequest.push(req.collection.count({ license: "yes", firstcar: "no", $or: [{ drivetrain: "fwd", drivetrain: "idontknow" }] }));
 
-  var total = [];
+  let total = [];
   total.push(label);
   Promise.all(allDbRequest).then(function (data) {
-      //console.log(data);//result will be array which contains each promise response
-      let fuelpercentage = (data[1] * 100)/data[0];
-      let drivepercentage = (data[2] * 100)/data[0];
-      let other = 100 - (fuelpercentage+drivepercentage);
-      if(other > 100 | other < 0) { 
-        other = 0;
-      }
-      var tdata = [];
+    //console.log(data);//result will be array which contains each promise response
+    let fuelpercentage = (data[1] * 100) / data[0];
+    let drivepercentage = (data[2] * 100) / data[0];
+    let other = 100 - (fuelpercentage + drivepercentage);
+    if (other > 100 | other < 0) {
+      other = 0;
+    }
+    let tdata = [];
 
-      tdata.push(fuelpercentage);
-      tdata.push(drivepercentage);
-      tdata.push(other);
-      total.push(tdata);
-      res.json(total);
+    tdata.push(fuelpercentage);
+    tdata.push(drivepercentage);
+    tdata.push(other);
+    total.push(tdata);
+    res.json(total);
   }).catch(function (err) {
-       console.log(err);
+    console.log(err);
   });
 });
 
 // GET /api/survey/averagecar is to get information about average car per family
 router.get('/api/survey/averagecar', async (req, res, next) => {
-  var allDbRequest = [];
-  allDbRequest.push(req.collection.aggregate([{ $group: { _id : null, "Average" : {$avg: "$carscount" }}}]).toArray());
+  let allDbRequest = [];
+  allDbRequest.push(req.collection.aggregate([{ $group: { _id: null, "Average": { $avg: "$carscount" } } }]).toArray());
   Promise.all(allDbRequest).then(function (data) {
-      //console.log(Math.ceil(data[0][0]['Average']));
-      res.json(Math.ceil(data[0][0]['Average']));
+    //console.log(Math.ceil(data[0][0]['Average']));
+    res.json(Math.ceil(data[0][0]['Average']));
   }).catch(function (err) {
-       console.log(err);
+    console.log(err);
   });
 });
 
 // GET /api/survey/carmodel/:cmake is to get information about models for a particular car make like BMW, MERCEDEZ
 router.get('/api/survey/carmodel/:cmake', async (req, res, next) => {
-  var allDbRequest = [];
-  allDbRequest.push(req.collection.aggregate([{  
-    $group: {
-      _id: {
-        carmake: "$carmake",
-        carmodel: "$carmodel"
-      },
-      count: {
-          "$sum": 1
-      }
-  }
-}, {
-  $group: {
-      _id: "$_id.carmake",
-      CARMODEL_GROUP: {
-          $push: {
-            carmodel: "$_id.carmodel",
-              count: "$count"
-          }
-      }
-  }
-
-  
-  }]).toArray());
+  let allDbRequest = [];
+  allDbRequest.push(req.collection.find({}).toArray());
   Promise.all(allDbRequest).then(function (data) {
-      //console.log(data[0]);//result will be array which contains each promise response
-      var label = [];
-      var tdata = [];
-      if(req.params.cmake == " "){
-        res.json(data[0]);
-        return;
-      }
-      for(let make of data[0]) {
-        if(make._id==req.params.cmake){
-          for(let model of make.CARMODEL_GROUP) {
-              //console.log(model.carmodel+ "  "+model.count);
-              label.push(model.carmodel);
-              tdata.push(model.count);
+    let label = [];
+    let tData = [];
+
+    for (let survey of data[0]) {
+      for (let car of survey.cars) {
+        if (car.carMakeInfo == req.params.cmake) {
+
+          if (label.indexOf(car.carModelInfo) > -1) {
+            tData[label.indexOf(car.carModelInfo)] = tData[label.indexOf(car.carModelInfo)] + 1;
+          } else {
+            label.push(car.carModelInfo);
+            tData.push(1);
           }
         }
+      }
+
     }
 
-    var fdata = [];
+    let fdata = [];
     fdata.push(label);
-    fdata.push(tdata);
+    fdata.push(tData);
     res.json(fdata);
   }).catch(function (err) {
-       console.log(err);
+    console.log(err);
   });
 });
 
 // GET /api/survey/carmake is to get information about car makers like BMW, MERCEDEZ
 router.get('/api/survey/carmake', async (req, res, next) => {
-  var allDbRequest = [];
-  allDbRequest.push(req.collection.aggregate([{  
-   
-      $group: {
-        _id: "$carmake", 
-        count: {
-          $sum: 1
+  let allDbRequest = [];
+  allDbRequest.push(req.collection.find({}).toArray());
+  Promise.all(allDbRequest).then(function (data) {
+    let label = [];
+    let tData = [];
+
+    for (let survey of data[0]) {
+      for (let car of survey.cars) {
+
+        if (label.indexOf(car.carMakeInfo) > -1) {
+          tData[label.indexOf(car.carMakeInfo)] = tData[label.indexOf(car.carMakeInfo)] + 1;
+        } else {
+          label.push(car.carMakeInfo);
+          tData.push(1);
         }
       }
- 
-  }]).toArray());
-  Promise.all(allDbRequest).then(function (data) {
-      //console.log(data[0]);//result will be array which contains each promise response
-      var label = [];
-      var tdata = [];
-          for(let model of data[0]) {
-            if(model._id!='' && model._id!=null){
-              label.push(model._id);
-              tdata.push(model.count);
-            }
-          }
 
-    var fdata = [];
+    }
+
+    let fdata = [];
     fdata.push(label);
-    fdata.push(tdata);
+    fdata.push(tData);
     res.json(fdata);
   }).catch(function (err) {
-       console.log(err);
+    console.log(err);
   });
 });
 
