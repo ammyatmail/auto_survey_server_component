@@ -1,7 +1,5 @@
 var express = require('express');
 var router = express.Router();
-const ObjectID = require('mongodb').ObjectID;
-
 
 // GET /api/survey is to get all survey information
 router.get('/api/survey', (req, res, next) => {
