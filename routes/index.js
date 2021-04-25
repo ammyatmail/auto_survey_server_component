@@ -55,18 +55,18 @@ router.get('/api/survey/targetableclients', async (req, res, next) => {
   total.push(label);
   Promise.all(allDbRequest).then(function (data) {
     //console.log(data);//result will be array which contains each promise response
-    let fuelpercentage = (data[1] * 100) / data[0];
-    let drivepercentage = (data[2] * 100) / data[0];
-    let other = 100 - (fuelpercentage + drivepercentage);
+    let fuelPercentage = (data[1] * 100) / data[0];
+    let drivePercentage = (data[2] * 100) / data[0];
+    let other = 100 - (fuelPercentage + drivePercentage);
     if (other > 100 | other < 0) {
       other = 0;
     }
-    let tdata = [];
+    let tData = [];
 
-    tdata.push(fuelpercentage);
-    tdata.push(drivepercentage);
-    tdata.push(other);
-    total.push(tdata);
+    tData.push(fuelPercentage);
+    tData.push(drivePercentage);
+    tData.push(other);
+    total.push(tData);
     res.json(total);
   }).catch(function (err) {
     console.log(err);
